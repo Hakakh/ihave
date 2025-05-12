@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lính Đặc Công Tập Trả Lời</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f8ff;
+            padding: 10px;
+            line-height: 1.6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+            margin: 10px auto;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        #gameCanvas {
+            border: 2px solid #007bff;
+            background-color: #87ceeb;
+            display: block;
+            margin: 10px auto;
+            width: 100%;
+            max-width: 680px;
+            height: 300px;
+        }
+
+        .game-info {
+            margin: 10px 0;
+            font-size: 1em;
+            color: #555;
+        }
+
+        .question {
+            margin: 15px 0 10px 0;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #0056b3;
+        }
+
+        .target-sentence {
+            margin-top: 5px;
+            font-size: 1.2em;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .answer-box {
+            background: #eef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            min-height: 1.2em;
+            text-align: left;
+            word-wrap: break-word;
+            border: 1px solid #cce;
+            font-size: 0.95em;
+        }
+
+        button {
+            margin: 8px 4px;
+            padding: 10px 15px;
+            font-size: 0.95em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            background: #e0ffe0;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            text-align: left;
+            border: 1px solid #a3e0a3;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+
+        .results-display {
+            background: #fff8e1;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+            text-align: left;
+            border: 1px solid #ffecb3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-size: 0.95em;
+        }
+
+        .results-display h3 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            font-size: 1.3em;
+        }
+
+        .results-display p {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #eee;
+        }
+        .results-display p:last-child {
+            border-bottom: none;
+        }
+
+        .results-display strong {
+            color: #007bff;
+        }
+
+        .results-display em {
+            color: #555;
+        }
+
+        .results-display button {
+            display: block;
+            margin: 15px auto 8px auto;
+            background-color: #28a745;
+        }
+        .results-display button:hover {
+            background-color: #218838;
+        }
+
+        #copyFeedback {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 8px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        #copyFeedback a {
+            color: #0056b3;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 5px;
+            }
+            .container {
+                padding: 10px;
+                margin: 5px auto;
+            }
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 10px;
+            }
+            #gameCanvas {
+                height: 250px;
+            }
+            button {
+                padding: 8px 12px;
+                font-size: 0.9em;
+                margin: 5px 3px;
+            }
+            .question {
+                font-size: 1em;
+                margin: 10px 0;
+            }
+            .answer-box, .feedback, .results-display {
+                font-size: 0.9em;
+                padding: 8px;
+            }
+            .results-display h3 {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Lính Đặc Công Tập Trả Lời</h1>
+
+        <div class="game-info">
+            Câu đã trả lời: <span id="sentencesCleared">0</span> / Tổng số: <span id="totalSentences">0</span>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="questionArea" class="question">Bấm "Bắt đầu" để nghe câu hỏi.</div>
+        <div id="targetSentenceArea" class="target-sentence" style="display: none;"></div>
+
+        <div>
+            <button onclick="window.speakQuestion()" id="startButton">🔊 Bắt đầu</button>
+            <button onclick="window.startRecognition()" id="answerButton">🎤 Trả lời</button>
+        </div>
+        <div id="transcript" class="answer-box"></div>
+        <div id="feedback" class="feedback" style="display: none;"></div>
+
+        <div>
+            <button onclick="window.nextSentence()" id="nextButton" disabled>➡️ Câu tiếp theo</button>
+            <button onclick="window.displayResults()" id="viewResultsButton">📊 Xem kết quả</button>
+        </div>
+
+        <div id="resultsDisplayArea" class="results-display" style="display: none;"></div>
+    </div>
+
+    <script>
+        // --- Cấu hình Game và Câu trả lời ---
+        const sentenceList = [
+            { sentence: "I have a dog.", emoji: "🐶" },
+            { sentence: "I have a big house.", emoji: "🏠" },
+            { sentence: "I have a new laptop.", emoji: "💻" },
+            { sentence: "I have a red bicycle.", emoji: "🚴" },
+            { sentence: "I have a great idea.", emoji: "💡" },
+            { sentence: "I have a test tomorrow.", emoji: "📝" },
+            { sentence: "I have a good friend.", emoji: "👯" },
+            { sentence: "I have a lot of homework.", emoji: "📚" },
+            { sentence: "I have an orange pen.", emoji: "🖊️" },
+            { sentence: "I have a blue bag.", emoji: "🎒" },
+            { sentence: "I have a small garden.", emoji: "🌱" },
+            { sentence: "I have a smart phone.", emoji: "📱" },
+            { sentence: "I have an old bicycle.", emoji: "🚲" },
+            { sentence: "I have a younger sister.", emoji: "👧" },
+            { sentence: "I have a new teacher.", emoji: "👩‍🏫" },
+            { sentence: "I have a beautiful flower.", emoji: "🌸" },
+            { sentence: "I have an English book.", emoji: "📖" },
+            { sentence: "I have a math test.", emoji: "➗" },
+            { sentence: "I have a black jacket.", emoji: "🧥" },
+            { sentence: "I have a white T-shirt.", emoji: "👕" },
+            { sentence: "I have a red apple.", emoji: "🍎" },
+            { sentence: "I have a nice watch.", emoji: "⌚" },
+            { sentence: "I have a lot of friends.", emoji: "👨‍👩‍👧‍👦" },
+            { sentence: "I have a cute puppy.", emoji: "🐕" },
+            { sentence: "I have a robot.", emoji: "🤖" }
+        ];
+
+        let currentSentenceIndex = 0;
+        let playerAttempts = new Array(sentenceList.length).fill(0);
+        let isAnsweredCorrectly = false;
+
+        // --- DOM Elements ---
+        const questionArea = document.getElementById("questionArea");
+        const targetSentenceArea = document.getElementById("targetSentenceArea");
+        const transcriptDiv = document.getElementById("transcript");
+        const feedbackDiv = document.getElementById("feedback");
+        const resultsDisplayArea = document.getElementById("resultsDisplayArea");
+        const startButton = document.getElementById("startButton");
+        const answerButton = document.getElementById("answerButton");
+        const nextButton = document.getElementById("nextButton");
+        const viewResultsButton = document.getElementById("viewResultsButton");
+        const sentencesClearedSpan = document.getElementById("sentencesCleared");
+        const totalSentencesSpan = document.getElementById("totalSentences");
+
+        // --- Canvas Setup ---
+        const canvas = document.getElementById("gameCanvas");
+        let ctx = canvas.getContext("2d");
+
+        let canvasWidth;
+        let canvasHeight;
+
+        // --- Game Variables ---
+        const groundHeight = 40;
+        let groundY;
+        const playerSize = 40;
+        const playerColor = "#006400";
+        const playerShapeSize = 40;
+        let playerY;
+        let playerGroundY;
+        const playerX = 50;
+
+        const emojiSize = 60;
+        const emojiY = 120;
+        let emojiTarget = { x: 0, y: emojiY, width: emojiSize, height: emojiSize, cleared: false };
+
+        // Biến cho hiệu ứng bắn
+        let bulletX;
+        let bulletY;
+        const bulletSpeed = 15;
+        let isShooting = false;
+
+        // --- Audio Setup (using Tone.js) ---
+        let shootSynth = null;
+
+        // --- Function Definitions ---
+
+        function resizeCanvas() {
+            canvasWidth = canvas.clientWidth;
+            canvasHeight = canvas.clientHeight;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            ctx = canvas.getContext("2d");
+            groundY = canvasHeight - groundHeight;
+            playerGroundY = canvasHeight - groundHeight - playerSize;
+            playerY = playerGroundY;
+            bulletX = playerX + playerSize * 0.7;
+            bulletY = playerY + playerSize * 0.5;
+            initializeEmojiTarget();
+        }
+
+        function initializeEmojiTarget() {
+            emojiTarget.x = canvasWidth - emojiSize - 50;
+            emojiTarget.y = emojiY;
+            emojiTarget.cleared = false;
+        }
+
+        function drawGround() {
+            ctx.fillStyle = "#a0522d";
+            ctx.fillRect(0, groundY, canvasWidth, groundHeight);
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = playerColor;
+            ctx.fillRect(playerX + playerShapeSize * 0.2, playerY, playerShapeSize * 0.6, playerShapeSize * 0.8);
+            ctx.beginPath();
+            ctx.arc(playerX + playerShapeSize / 2, playerY - playerShapeSize * 0.3, playerShapeSize * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(playerX + playerShapeSize * 0.1, playerY + playerShapeSize * 0.8, playerShapeSize * 0.3, playerShapeSize * 0.2);
+            ctx.fillRect(playerX + playerShapeSize * 0.6, playerY + playerShapeSize * 0.8, playerShapeSize * 0.3, playerShapeSize * 0.2);
+            ctx.fillRect(playerX + playerShapeSize * 0.7, playerY + playerShapeSize * 0.2, playerShapeSize * 0.3, playerShapeSize * 0.15);
+            ctx.fillRect(playerX + playerShapeSize * 0.7, playerY + playerShapeSize * 0.4, playerShapeSize * 0.3, playerShapeSize * 0.15);
+            ctx.fillStyle = "#333";
+            ctx.fillRect(playerX + playerShapeSize, playerY + playerShapeSize * 0.5, playerShapeSize * 0.5, playerShapeSize * 0.1);
+        }
+
+        function drawEmojiTarget() {
+            if (emojiTarget.cleared || currentSentenceIndex >= sentenceList.length) return;
+            ctx.font = `${emojiSize}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(sentenceList[currentSentenceIndex].emoji, emojiTarget.x + emojiSize / 2, emojiTarget.y + emojiSize / 2);
+        }
+
+        function drawBullet() {
+            if (isShooting) {
+                ctx.fillStyle = "yellow";
+                ctx.beginPath();
+                ctx.arc(bulletX, bulletY, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawGame() {
+            if (!ctx) {
+                console.error("Canvas context is not available.");
+                return;
+            }
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            drawGround();
+            drawEmojiTarget();
+            drawPlayer();
+            drawBullet();
+        }
+
+        function gameLoop() {
+            if (isShooting) {
+                const targetX = emojiTarget.x + emojiSize / 2;
+                const targetY = emojiTarget.y + emojiSize / 2;
+                const deltaX = targetX - bulletX;
+                const deltaY = targetY - bulletY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                if (distance > bulletSpeed) {
+                    bulletX += (deltaX / distance) * bulletSpeed;
+                    bulletY += (deltaY / distance) * bulletSpeed;
+                } else {
+                    bulletX = targetX;
+                    bulletY = targetY;
+                    isShooting = false;
+                    emojiTarget.cleared = true;
+                    bulletX = playerX + playerSize * 0.7;
+                    bulletY = playerY + playerSize * 0.5;
+                    setTimeout(() => {
+                        nextButton.disabled = false;
+                    }, 500);
+                }
+            }
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Speech Recognition and Synthesis ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = function (event) {
+                const transcript = event.results[0][0].transcript.trim().toLowerCase();
+                transcriptDiv.textContent = `Bạn nói: ${transcript}`;
+                provideFeedback(transcript);
+                answerButton.disabled = false;
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Lỗi nhận dạng giọng nói:", event.error);
+                let errorMessage;
+                switch (event.error) {
+                    case 'no-speech':
+                        errorMessage = "Không phát hiện giọng nói. Vui lòng thử lại.";
+                        break;
+                    case 'audio-capture':
+                        errorMessage = "Lỗi thu âm thanh. Vui lòng kiểm tra micro.";
+                        break;
+                    case 'not-allowed':
+                        errorMessage = "Quyền truy cập micro bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt.";
+                        break;
+                    default:
+                        errorMessage = `Lỗi nhận dạng giọng nói: ${event.error}. Vui lòng thử lại.`;
+                }
+                feedbackDiv.textContent = errorMessage;
+                feedbackDiv.style.display = 'block';
+                feedbackDiv.style.backgroundColor = '#f8d7da';
+                feedbackDiv.style.borderColor = '#f5c6cb';
+                speakText(errorMessage, 'vi-VN');
+                answerButton.disabled = false;
+            };
+
+            recognition.onstart = function() {
+                answerButton.disabled = true;
+                transcriptDiv.textContent = "Đang nghe...";
+                feedbackDiv.style.display = 'none';
+            };
+
+            recognition.onend = function() {
+                answerButton.disabled = false;
+                if (transcriptDiv.textContent === "Đang nghe...") {
+                    transcriptDiv.textContent = "Không phát hiện thấy giọng nói.";
+                    feedbackDiv.textContent = "Không phát hiện thấy giọng nói. Vui lòng thử lại!";
+                    feedbackDiv.style.display = 'block';
+                    feedbackDiv.style.backgroundColor = '#fff3cd';
+                    feedbackDiv.style.borderColor = '#ffeeba';
+                    speakText("Không phát hiện thấy giọng nói. Vui lòng thử lại!", 'vi-VN');
+                }
+            };
+        } else {
+            console.warn("Speech Recognition API not supported.");
+            answerButton.disabled = true;
+            answerButton.textContent = "🎤 API không hỗ trợ";
+            questionArea.textContent = "Trình duyệt không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Google Chrome.";
+            feedbackDiv.textContent = "Trình duyệt không hỗ trợ nhận dạng giọng nói.";
+            feedbackDiv.style.display = 'block';
+            feedbackDiv.style.backgroundColor = '#f8d7da';
+            feedbackDiv.style.borderColor = '#f5c6cb';
+        }
+
+        function speakText(text, lang = 'en-US') {
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            utterance.onerror = (event) => {
+                console.error("Lỗi phát giọng nói:", event.error);
+            };
+            speechSynthesis.speak(utterance);
+        }
+
+        function isCorrectSentence(spokenText, expectedSentence) {
+            const normalizedSpoken = spokenText.trim().toLowerCase().replace(/[.,!]/g, '');
+            const normalizedExpected = expectedSentence.toLowerCase().replace(/[.,!]/g, '');
+            return normalizedSpoken === normalizedExpected || normalizedSpoken.replace(/\s+/g, ' ') === normalizedExpected;
+        }
+
+        function provideFeedback(spokenText) {
+            feedbackDiv.style.display = 'block';
+            const expectedSentence = sentenceList[currentSentenceIndex].sentence;
+
+            if (isAnsweredCorrectly) {
+                feedbackDiv.textContent = `Bạn đọc đúng rồi!`;
+                feedbackDiv.style.backgroundColor = '#d4edda';
+                feedbackDiv.style.borderColor = '#c3e6cb';
+                speakText(`Bạn đọc đúng rồi!`, 'vi-VN');
+                return;
+            }
+
+            let comment, speakFeedbackText;
+            if (!spokenText || spokenText.trim() === "") {
+                comment = "⚠️ Không phát hiện giọng nói. Vui lòng thử lại!";
+                speakFeedbackText = "Không phát hiện giọng nói. Vui lòng thử lại!";
+                feedbackDiv.style.backgroundColor = '#fff3cd';
+                feedbackDiv.style.borderColor = '#ffeeba';
+            } else if (isCorrectSentence(spokenText, expectedSentence)) {
+                comment = `Bạn đọc đúng rồi!`;
+                speakFeedbackText = `Bạn đọc đúng rồi!`;
+                feedbackDiv.style.backgroundColor = '#d4edda';
+                feedbackDiv.style.borderColor = '#c3e6cb';
+                isAnsweredCorrectly = true;
+                sentencesClearedSpan.textContent = currentSentenceIndex + 1;
+                answerButton.disabled = true;
+                nextButton.disabled = true;
+                isShooting = true;
+                if (shootSynth) {
+                    shootSynth.triggerAttackRelease("C4", "32n");
+                }
+            } else {
+                playerAttempts[currentSentenceIndex]++;
+                comment = `Bạn đọc chưa đúng! Hãy thử lại!`;
+                speakFeedbackText = `Bạn đọc chưa đúng! Hãy thử lại!`;
+                feedbackDiv.style.backgroundColor = '#f8d7da';
+                feedbackDiv.style.borderColor = '#f5c6cb';
+                if (playerAttempts[currentSentenceIndex] >= 3) {
+                    comment += ` Bạn đã thử sai 3 lần. Nhấn "Câu tiếp theo" để tiếp tục!`;
+                    speakFeedbackText += ` Bạn đã thử sai ba lần. Nhấn Câu tiếp theo để tiếp tục!`;
+                    nextButton.disabled = false;
+                    answerButton.disabled = true;
+                }
+            }
+
+            feedbackDiv.textContent = comment;
+            speakText(speakFeedbackText, 'vi-VN');
+        }
+
+        function loadSentence(index) {
+            if (index >= sentenceList.length) {
+                questionArea.textContent = "Chúc mừng! Bạn đã hoàn thành tất cả các câu!";
+                targetSentenceArea.style.display = 'none';
+                disableButtonsOnComplete();
+                displayResults();
+                return false;
+            }
+
+            const sentenceData = sentenceList[index];
+            isAnsweredCorrectly = false;
+            questionArea.textContent = `Câu hỏi: What do you have?`;
+            targetSentenceArea.textContent = sentenceData.sentence;
+            targetSentenceArea.style.display = 'block';
+            transcriptDiv.textContent = '';
+            feedbackDiv.style.display = 'none';
+            answerButton.disabled = false;
+            nextButton.disabled = true;
+            startButton.disabled = false;
+            initializeEmojiTarget();
+            return true;
+        }
+
+        function speakQuestion() {
+            if (currentSentenceIndex >= sentenceList.length) return;
+            speakText("What do you have?", 'en-US');
+        }
+
+        function startRecognition() {
+            if (recognition) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error("Lỗi khi bắt đầu nhận dạng giọng nói:", e);
+                    feedbackDiv.textContent = "Lỗi khi bắt đầu nhận dạng giọng nói. Vui lòng thử lại.";
+                    feedbackDiv.style.display = 'block';
+                    feedbackDiv.style.borderColor = '#f5c6cb';
+                }
+            } else {
+                feedbackDiv.textContent = "Nhận dạng giọng nói không được hỗ trợ trên trình duyệt này.";
+                feedbackDiv.style.display = 'block';
+                feedbackDiv.style.backgroundColor = '#f8d7da';
+                feedbackDiv.style.borderColor = '#f5c6cb';
+            }
+        }
+
+        function nextSentence() {
+            currentSentenceIndex++;
+            if (loadSentence(currentSentenceIndex)) {
+                speakQuestion();
+            }
+        }
+
+        function disableButtonsOnComplete() {
+            startButton.disabled = true;
+            answerButton.disabled = true;
+            nextButton.disabled = true;
+            viewResultsButton.disabled = false;
+        }
+
+        function displayResults() {
+            resultsDisplayArea.innerHTML = '';
+
+            let resultHTML = "<h3>Bảng Kết Quả Trả Lời</h3>";
+            const list = sentenceList.map((sentenceData, i) => {
+                const attempts = playerAttempts[i];
+                const isCleared = i < currentSentenceIndex || (i === currentSentenceIndex && isAnsweredCorrectly);
+                const status = isCleared ? "✅ Đã trả lời đúng" : "❌ Chưa trả lời đúng";
+                const attemptsText = isCleared && attempts === 0 ? "(Đọc tốt)" : (attempts > 0 ? `(Số lần thử: ${attempts})` : "(Chưa thử)");
+                return `<p><strong>Câu ${i + 1}:</strong> ${sentenceData.sentence} ${sentenceData.emoji}<br/>
+                        <em>Trạng thái:</em> ${status} ${attemptsText}</p>`;
+            }).join('');
+
+            resultHTML += list;
+            resultHTML += `<button onclick="window.shareGeneratedResults()">📤 Chia sẻ kết quả này</button>`;
+            resultHTML += `<div id="copyFeedback" style="display:none;"></div>`;
+
+            resultsDisplayArea.innerHTML = resultHTML;
+            resultsDisplayArea.style.display = 'block';
+            resultsDisplayArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function shareGeneratedResults() {
+            const listItems = sentenceList.map((sentenceData, i) => {
+                const attempts = playerAttempts[i];
+                const isCleared = i < currentSentenceIndex || (i === currentSentenceIndex && isAnsweredCorrectly);
+                const status = isCleared ? "Đã trả lời đúng" : "Chưa trả lời đúng";
+                const attemptsText = isCleared && attempts === 0 ? "(Đọc tốt)" : (attempts > 0 ? `(Số lần thử: ${attempts})` : "(Chưa thử)");
+                return `
+                    <div style="margin-bottom: 15px; padding-bottom:10px; border-bottom: 1px solid #eee;">
+                        <p style="font-weight: bold; color: #0056b3; margin-bottom: 5px;">Câu ${i + 1}: ${sentenceData.sentence} ${sentenceData.emoji}</p>
+                        <p style="margin-top:5px;"><em>Trạng thái:</em> ${status} ${attemptsText}</p>
+                    </div>`;
+            }).join('');
+
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html lang="vi">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Kết quả Trả Lời của Bé</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; line-height: 1.6; }
+                        .container-result { max-width: 700px; margin: 20px auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+                        h2 { color: #0056b3; text-align: center; border-bottom: 2px solid #0056b3; padding-bottom: 10px; margin-bottom: 25px; }
+                        p { margin-bottom: 8px; }
+                        em { font-style: italic; color: #555; }
+                        button { 
+                            display: block; 
+                            margin: 20px auto; 
+                            padding: 10px 20px; 
+                            font-size: 1em; 
+                            border: none; 
+                            border-radius: 5px; 
+                            cursor: pointer; 
+                            background: #007bff; 
+                            color: white; 
+                            transition: background-color 0.3s ease; 
+                        }
+                        button:hover { background: #0056b3; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container-result">
+                        <h2>Kết quả Trả Lời - Lính Đặc Công</h2>
+                        ${listItems}
+                        <p style="text-align:center; margin-top:25px; font-size:0.9em; color: #777;">Kết quả được tạo vào lúc: ${new Date().toLocaleString('vi-VN')}</p>
+                        <button onclick="window.close()">⬅️ Quay trở về màn hình chính</button>
+                    </div>
+                </body>
+                </html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const copyFeedbackDiv = document.getElementById("copyFeedback");
+            copyFeedbackDiv.style.display = 'block';
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    copyFeedbackDiv.innerHTML = `🔗 Link kết quả đã được sao chép! Bạn có thể dán (Ctrl+V hoặc Command+V) để chia sẻ. Hoặc <a href="${url}" target="_blank" rel="noopener noreferrer">xem kết quả tại đây</a>.`;
+                }).catch(err => {
+                    console.error('Không thể sao chép link tự động: ', err);
+                    copyFeedbackDiv.innerHTML = `Không thể tự động sao chép link. Vui lòng sao chép thủ công: <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+                });
+            } else {
+                copyFeedbackDiv.innerHTML = `Trình duyệt không hỗ trợ sao chép tự động. Vui lòng sao chép link sau để chia sẻ: <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+            }
+            window.open(url, '_blank');
+        }
+
+        // --- Initialization ---
+
+        window.loadSentence = loadSentence;
+        window.speakQuestion = speakQuestion;
+        window.startRecognition = startRecognition;
+        window.nextSentence = nextSentence;
+        window.displayResults = displayResults;
+        window.shareGeneratedResults = shareGeneratedResults;
+        window.isCorrectSentence = isCorrectSentence;
+        window.initializeEmojiTarget = initializeEmojiTarget;
+        window.handleFirstInteraction = handleFirstInteraction;
+
+        function initGame() {
+            console.log("Initializing game...");
+            totalSentencesSpan.textContent = sentenceList.length;
+            resizeCanvas();
+            document.addEventListener('click', window.handleFirstInteraction, { once: true });
+        }
+
+        function handleFirstInteraction() {
+            console.log("First user interaction detected.");
+            if (!shootSynth) {
+                try {
+                    shootSynth = new Tone.Synth({
+                        oscillator: { type: "square" },
+                        envelope: { attack: 0.001, decay: 0.05, sustain: 0.01, release: 0.1 }
+                    }).toDestination();
+                    console.log("Tone.js shootSynth initialized.");
+                } catch (e) {
+                    console.error("Lỗi khởi tạo Tone.js:", e);
+                }
+            }
+
+            if (Tone.context.state !== 'running') {
+                Tone.context.resume().then(() => {
+                    console.log('AudioContext resumed successfully.');
+                }).catch(e => {
+                    console.error('Error resuming AudioContext:', e);
+                });
+            }
+
+            loadSentence(currentSentenceIndex);
+            gameLoop();
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
